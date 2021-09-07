@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>My Wikipedia dom parser</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="index.css" />
+    <script src="index.js"></script>
+  </head>
+  <body>
+    <h1>Wikipedia DOM Parser</h1>
+    <form onsubmit="main(); return false;">
+      <label for="url">Enter an URL of Wikipedia:</label>
+      <input
+        type="url"
+        name="url"
+        id="url"
+        placeholder="https://ja.wikipedia.org/wiki/%E7%89%A9%E6%B5%81"
+        pattern="https://.*"
+        required
+      />
+      <input type="submit" value="search" />
+    </form>
+    <p id="result"></p>
+  </body>
+</html>
