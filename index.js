@@ -1,10 +1,17 @@
 const getInputUrl = () => document.getElementById("url").value;
 
-const showResult = (result) => {
-  document.getElementById("result").innerHTML = result;
+const showResult = (htmlString) => {
+  document.getElementById("result").innerHTML = htmlString;
 };
 
 const main = () => {
   const url = getInputUrl();
-  showResult(url);
+  fetch(url)
+    .then((response) => {
+      const responseInHtmlString = response.text();
+      showResult(responseInHtmlString);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 };
