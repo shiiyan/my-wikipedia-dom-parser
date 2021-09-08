@@ -4,11 +4,15 @@ const showResult = (htmlString) => {
   document.getElementById("result").innerHTML = htmlString;
 };
 
+const fetchHtml = (url) => fetch("http://localhost:8080/" + url);
+
 const main = () => {
   const url = getInputUrl();
-  fetch(url)
+  fetchHtml(url)
     .then((response) => {
-      const responseInHtmlString = response.text();
+      return response.text();
+    })
+    .then((responseInHtmlString) => {
       showResult(responseInHtmlString);
     })
     .catch((err) => {
