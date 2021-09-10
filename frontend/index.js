@@ -5,15 +5,6 @@ const parseKeywordFromURL = (url) => {
   return decodeURI(segments.pop());
 };
 
-const appendKeywordToList = (wikiURL) => {
-  const ulNode = document.createElement("ul");
-  const keywordText = document.createTextNode(parseKeywordFromURL(wikiURL));
-  const liNode = document.createElement("li");
-  liNode.appendChild(keywordText);
-  ulNode.appendChild(liNode);
-  return ulNode;
-};
-
 // TODO: replace local host with real cors proxy server.
 const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 
