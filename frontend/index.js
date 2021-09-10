@@ -6,27 +6,60 @@ const parseKeywordFromURL = (url) => {
 };
 
 const appendKeywordToList = (wikiURL) => {
-  const ulNode = document.createElement("ul")
+  const ulNode = document.createElement("ul");
   const keywordText = document.createTextNode(parseKeywordFromURL(wikiURL));
   const liNode = document.createElement("li");
   liNode.appendChild(keywordText);
   ulNode.appendChild(liNode);
-  return ulNode
+  return ulNode;
 };
 
 // TODO: replace local host with real cors proxy server.
-const fetchHtml = (url) => fetch("http://localhost:8080/" + url);
+const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
+
+// Sample result List
+// const resultList = [
+// 	{ keyword: "Foobar", parentKeyword: null },
+// 	{ keyword: "メタ構文変数", parentKeyword: "Foobar" },
+// 	{ keyword: "プログラミング言語", parentKeyword: "メタ構文変数" },
+// 	...
+// ];
+
+
+// Sample result Tree
+// const resultTree = {
+//   keyword: "Foobar",
+//   children: [
+//     {
+//       keyword: "メタ構文変数",
+//       children: [
+//         { keyword: "プログラミング言語", children: [] },
+//         { keyword: "識別子", children: [] },
+//       ],
+//     },
+//   ],
+// };
+
+const transformResultTreeToHtmlList = (resultTree, container) => {
+  const li = document.createElement("li");
+  container.appendChild(li);
+  li.innerHTML = resultTree.keyword;
+
+  for (subTree of resultTree.children) {
+    const ul = document.createElement("ul");
+    li.appendChild(ul);
+    transformResultTreeToHtmlList(subTree, ul);
+  }
+};
 
 const main = () => {
   const url = getInputUrl();
-  const rootUlNode = document.getElementById("result");
-  // appendKeywordToList(rootUlNode, url);
+  const resultList = fetchKeywords(url);
 
-  const appendKeywordToList(rootUlNode, "https://ja.wikipedia.org/wiki/Foobar")
+  const resultTree = transformResultListToTree(resultList);
 
-
-  rootUlNode.firstChild.
-  appendKeywordToList(, "https://ja.wikipedia.org/wiki/%E3%83%A1%E3%82%BF%E6%A7%8B%E6%96%87%E5%A4%89%E6%95%B0")
+  const rootContainer = document.getElementById("result");
+  transformResultTreeToHtmlList(resultTree, rootContainer);
 
   // fetchHtml(url)
   //   .then((response) => {
