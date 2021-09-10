@@ -17,6 +17,7 @@ const appendKeywordToList = (wikiURL) => {
 // TODO: replace local host with real cors proxy server.
 const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 
+// TODO: change below to real documental comment
 // Sample result List
 // const resultList = [
 // 	{ keyword: "Foobar", parentKeyword: null },
@@ -40,20 +41,17 @@ const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 // };
 
 const transformResultListToTree = (resultList) => {
-  const keywordIndexMapping = resultList.reduce((acc, el, i) => {
-    acc[el.keyword] = i;
-    return acc;
-  }, {});
-
   let resultTree;
-  resultList.forEach((item) => {
-    if (!item.parentKeyword) {
-      resultTree = item;
+  resultList.forEach((one) => {
+    if (!one.parentKeyword) {
+      resultTree = one;
       return;
     }
 
-    const parentItem = resultList[keywordIndexMapping[item.parentKeyword]];
-    parentItem.children = [...(parentItem.children || []), item];
+    const parentItem = resultList.find(
+      (another) => another.keyword === one.parentKeyword
+    );
+    parentItem.children = [...(parentItem.children || []), one];
   });
 
   return resultTree;
@@ -63,6 +61,7 @@ const transformResultTreeToHtmlList = (resultTree, container) => {
   const li = document.createElement("li");
   container.appendChild(li);
   li.innerHTML = resultTree.keyword;
+
   resultTree.children?.forEach((subTree) => {
     const ul = document.createElement("ul");
     li.appendChild(ul);
