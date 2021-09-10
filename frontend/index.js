@@ -25,7 +25,6 @@ const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 // 	...
 // ];
 
-
 // Sample result Tree
 // const resultTree = {
 //   keyword: "Foobar",
@@ -40,35 +39,64 @@ const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 //   ],
 // };
 
+const transformResultListToTree = (resultList) => {
+  const keywordIndexMapping = resultList.reduce((acc, el, i) => {
+    acc[el.keyword] = i;
+    return acc;
+  }, {});
+
+  let resultTree;
+  resultList.forEach((item) => {
+    if (!item.parentKeyword) {
+      resultTree = item;
+      return;
+    }
+
+    const parentItem = resultList[keywordIndexMapping[item.parentKeyword]];
+    parentItem.children = [...(parentItem.children || []), item];
+  });
+
+  return resultTree;
+};
+
 const transformResultTreeToHtmlList = (resultTree, container) => {
   const li = document.createElement("li");
   container.appendChild(li);
   li.innerHTML = resultTree.keyword;
-
-  for (subTree of resultTree.children) {
+  resultTree.children?.forEach((subTree) => {
     const ul = document.createElement("ul");
     li.appendChild(ul);
     transformResultTreeToHtmlList(subTree, ul);
-  }
+  });
 };
 
 const main = () => {
-  const url = getInputUrl();
-  const resultList = fetchKeywords(url);
+  try {
+    // const url = getInputUrl();
+    // const resultList = fetchKeywords(url);
 
-  const resultTree = transformResultListToTree(resultList);
+    const resultList = [
+      { keyword: "Foobar", parentKeyword: null },
+      { keyword: "メタ構文変数", parentKeyword: "Foobar" },
+      { keyword: "プログラミング言語", parentKeyword: "メタ構文変数" },
+    ];
 
-  const rootContainer = document.getElementById("result");
-  transformResultTreeToHtmlList(resultTree, rootContainer);
+    const resultTree = transformResultListToTree(resultList);
 
-  // fetchHtml(url)
-  //   .then((response) => {
-  //     return response.text();
-  //   })
-  //   .then((responseInHtmlString) => {
-  //     showResult(responseInHtmlString);
-  //   })
-  //   .catch((err) => {
-  //     console.error(err);
-  //   });
+    const rootContainer = document.getElementById("result");
+    transformResultTreeToHtmlList(resultTree, rootContainer);
+
+    // fetchHtml(url)
+    //   .then((response) => {
+    //     return response.text();
+    //   })
+    //   .then((responseInHtmlString) => {
+    //     showResult(responseInHtmlString);
+    //   })
+    //   .catch((err) => {
+    //     console.error(err);
+    //   });
+  } catch (err) {
+    console.error(err);
+  }
 };
