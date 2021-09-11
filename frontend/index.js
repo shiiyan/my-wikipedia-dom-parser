@@ -36,6 +36,12 @@ const fetchKeywordsFromWikipedia = async (url) => {
   return fetchedKeywords;
 };
 
+const isNoFetchingKeyword = (keyword) =>
+  keyword[keyword.length - 1] === "語" || keyword[keyword.length - 1] === "学";
+
+const isKeywordFetched = (target, fetchHistoryList) =>
+  fetchHistoryList.includes(target);
+
 const generateKeywordList = async (url) => {
   const keywordList = [];
   keywordList.push({
@@ -43,12 +49,26 @@ const generateKeywordList = async (url) => {
     parentKeyword: null,
     url: url,
   });
+  const fetchHistoryList = [];
 
-  var i = 0;
-  while (i < 20) {
-    const keywords = await fetchKeywordsFromWikipedia(keywordList[i].url);
-    keywordList.push(...keywords);
+  let i = 0;
+  while (fetchHistoryList.length < 20) {
+    if (!keywordList[i]) {
+      break;
+    } else if (isNoFetchingKeyword(keywordList[i].keyword)) {
+      keywordList[i].keyword += "$";
+    } else if (isKeywordFetched(keywordList[i].keyword, fetchHistoryList)) {
+      keywordList[i].keyword += "@";
+    } else {
+      const keywords = await fetchKeywordsFromWikipedia(keywordList[i].url);
+      fetchHistoryList.push(parseKeywordFromURL(keywordList[i].url));
+      keywordList.push(...keywords);
+    }
     i += 1;
+  }
+
+  for (i; i < keywordList.length; i++) {
+    keywordList[i].keyword += "$";
   }
 
   return keywordList;
