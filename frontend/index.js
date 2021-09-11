@@ -36,7 +36,7 @@ const fetchKeywordsFromWikipedia = async (url) => {
   return fetchedKeywords;
 };
 
-const generateKeywordList = (url) => {
+const generateKeywordList = async (url) => {
   const keywordList = [];
   keywordList.push({
     keyword: parseKeywordFromURL(url),
@@ -46,7 +46,7 @@ const generateKeywordList = (url) => {
 
   var i = 0;
   while (i < 20) {
-    const keywords = fetchKeywordsFromWikipedia(keywordList[i].url);
+    const keywords = await fetchKeywordsFromWikipedia(keywordList[i].url);
     keywordList.push(...keywords);
     i += 1;
   }
@@ -106,18 +106,30 @@ const transformTreeToHtmlList = (keywordTree, container) => {
   });
 };
 
+const clearSearchResult = () => {
+  document.getElementById("result").innerHTML = "";
+};
+
+const showSearchingInProgress = () => {
+  document.getElementById("searching-in-progress").classList.remove("hidden");
+};
+
+const hideSearchingInProgress = () => {
+  document.getElementById("searching-in-progress").classList.add("hidden");
+};
+
 const main = async () => {
   try {
-    const url = getInputUrl();
-    const fetchedKeywords = await fetchKeywordsFromWikipedia(url);
+    clearSearchResult();
+    showSearchingInProgress();
 
-    console.log("fetchedKeywords, ", fetchedKeywords);
-    // const keywordList = generateKeywordList(url);
+    const keywordList = await generateKeywordList(getInputUrl());
+    const keywordTree = transformListToTree(keywordList);
 
-    // const keywordTree = transformListToTree(keywordList);
+    const rootContainer = document.getElementById("result");
+    transformTreeToHtmlList(keywordTree, rootContainer);
 
-    // const rootContainer = document.getElementById("result");
-    // transformTreeToHtmlList(keywordTree, rootContainer);
+    hideSearchingInProgress();
   } catch (err) {
     console.error(err);
   }

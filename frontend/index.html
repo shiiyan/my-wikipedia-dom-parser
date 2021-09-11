@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>My Wikipedia dom parser</title>
+    <title>Wikipedia Search Keyword Parser</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" type="text/css" media="screen" href="index.css" />
     <script src="index.js"></script>
   </head>
   <body>
-    <h1>Wikipedia DOM Parser</h1>
+    <h1>Wikipedia Search Keyword Parser</h1>
     <form onsubmit="main(); return false;">
       <label for="url">Enter an URL of Wikipedia:</label>
       <input
@@ -22,6 +22,10 @@
       />
       <input type="submit" value="search" />
     </form>
+    <div id="searching-in-progress" class="hidden">
+      <progress></progress>
+      <p>Searching may take about 20s. Please wait with patience...</p>
+    </div>
     <ul id="result"></ul>
   </body>
 </html>
