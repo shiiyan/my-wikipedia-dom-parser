@@ -1,16 +1,54 @@
+/**
+ * Get value from URL input field.
+ *
+ * @return {string} Inputted URL.
+ */
 const getInputUrl = () => document.getElementById("url").value;
 
-// TODO: replace local host with real cors proxy server.
+/**
+ * Fetch HTML with CORS proxy server.
+ *
+ * CORS proxy server is necessary because Wikipedia does not allow cross origin request by default.
+ *
+ * @todo Replace local host with real CORS proxy server.
+ *
+ * @param {string} url URL to fetch.
+ *
+ * @return {Promise<Response>} Promise of Response.
+ */
 const fetchHtmlWithCorsProxy = (url) => fetch("http://localhost:8080/" + url);
 
+/**
+ * Extract keyword from Wikipedia URL.
+ *
+ * Given URL "/wiki/Foobar" as input, "Foobar" will be extracted as keyword.
+ *
+ * @param {string} url URL of Wikipedia.
+ *
+ * @return {string} Extracted keyword.
+ */
 const parseKeywordFromURL = (url) => {
   const segments = new URL(url).pathname.split("/");
   return decodeURI(segments.pop());
 };
 
+/**
+ * Stop process for a given period of time.
+ *
+ * @param {number} ms Time to sleep in milliseconds.
+ */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const fetchKeywordsFromWikipedia = async (url) => {
+/**
+ * Search one keyword for keywords that attach to it.
+ *
+ * First fetch HTML of given Wikipedia URL, then extract keywords that appear inside introduction section of fetched HTML.
+ *
+ * @param {string} url URL (of Wikipedia).
+ *
+ * @return {Promise<{keyword: string; parentKeyword: string; url: string;}[]>} Promise of fetched Keywords.
+ */
+const searchOneKeyword = async (url) => {
   await sleep(1000);
 
   const host = "https://" + new URL(url).host;
@@ -36,13 +74,40 @@ const fetchKeywordsFromWikipedia = async (url) => {
   return fetchedKeywords;
 };
 
+/**
+ * Verify whether the given keyword belongs to no fetching keywords.
+ *
+ * Keywords that ends with "語" or "学" are no fetching keywords.
+ * They do not need to be fetched for keywords inside their introduction section.
+ *
+ * @param {string} keyword
+ *
+ * @return {boolean}
+ */
 const isNoFetchingKeyword = (keyword) =>
   keyword[keyword.length - 1] === "語" || keyword[keyword.length - 1] === "学";
 
+/**
+ * Verify whether the given keyword has been fetched.
+ *
+ * @param {string}   target            Target keyword to verify.
+ * @param {string[]} fetchHistoryList  List consists of keyword that has been fetched.
+ *
+ * @return {boolean}
+ */
 const isKeywordFetched = (target, fetchHistoryList) =>
   fetchHistoryList.includes(target);
 
-const generateKeywordList = async (url) => {
+/**
+ * Search nested keywords for 20 times.
+ *
+ * Nested search for keywords that appear inside their parent keyword's introduction section for up to 20 times.
+ *
+ * @param {string} url URL (of Wikipedia).
+ *
+ * @return {Promise<{keyword: string; parentKeyword: string | null; url: string;}[]>} Promise of fetched Keywords.
+ */
+const searchNestedKeywords = async (url) => {
   const keywordList = [];
   keywordList.push({
     keyword: parseKeywordFromURL(url),
@@ -60,7 +125,7 @@ const generateKeywordList = async (url) => {
     } else if (isKeywordFetched(keywordList[i].keyword, fetchHistoryList)) {
       keywordList[i].keyword += "@";
     } else {
-      const keywords = await fetchKeywordsFromWikipedia(keywordList[i].url);
+      const keywords = await searchOneKeyword(keywordList[i].url);
       fetchHistoryList.push(parseKeywordFromURL(keywordList[i].url));
       keywordList.push(...keywords);
     }
@@ -73,15 +138,6 @@ const generateKeywordList = async (url) => {
 
   return keywordList;
 };
-
-// TODO: change below to real documental comment
-// Sample result List
-// const keywordList = [
-// 	{ keyword: "Foobar", parentKeyword: null },
-// 	{ keyword: "メタ構文変数", parentKeyword: "Foobar" },
-// 	{ keyword: "プログラミング言語", parentKeyword: "メタ構文変数" },
-// 	...
-// ];
 
 // Sample result Tree
 // const keywordTree = {
@@ -143,7 +199,7 @@ const main = async () => {
     clearSearchResult();
     showSearchingInProgress();
 
-    const keywordList = await generateKeywordList(getInputUrl());
+    const keywordList = await searchNestedKeywords(getInputUrl());
     const keywordTree = transformListToTree(keywordList);
 
     const rootContainer = document.getElementById("result");
