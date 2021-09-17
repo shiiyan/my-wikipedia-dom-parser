@@ -74,6 +74,11 @@ const searchOneKeyword = async (url) => {
   const p = responseDoc
     .querySelector("div.mw-parser-output")
     .querySelector("p");
+
+  if (!p) {
+    return [];
+  }
+
   const anchorList = p.querySelectorAll('[href*="/wiki/"]');
 
   const keywordList = [...anchorList].map((a) => ({
