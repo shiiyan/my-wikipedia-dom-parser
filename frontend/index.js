@@ -40,6 +40,17 @@ const parseKeywordFromURL = (url) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * Make url for Wikipedia keywords.
+ *
+ * @param {string} host Host of Wikipedia.
+ * @param {string} href Value inside href property of anchor element.
+ *
+ * @return {string} Generated url.
+ */
+const makeUrl = (host, href) =>
+  href.includes("https://") ? href : host + href;
+
+/**
  * Search one keyword for keywords that attach to it.
  *
  * First fetch HTML of given Wikipedia URL, then extract keywords that appear inside introduction section of fetched HTML.
@@ -68,7 +79,7 @@ const searchOneKeyword = async (url) => {
   const keywordList = [...anchorList].map((a) => ({
     keyword: parseKeywordFromURL(a.href),
     parentKeyword: parseKeywordFromURL(url),
-    url: host + a.attributes.href.value,
+    url: makeUrl(host, a.attributes.href.value),
   }));
 
   return keywordList;

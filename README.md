@@ -1,6 +1,9 @@
-# Wikipedia Search Keyword Tree Generator
+# Wikipedia Keyword Tree Generator
 
 This is a simple application to generate a nested keyword tree for any given keyword of Wikipedia.
+
+Notice:
+I build this application mainly for Wikipedia page in Japanese, which has URL like `ja.wikipedia.org/`. English page may not work properly.
 
 ## Requirements
 
