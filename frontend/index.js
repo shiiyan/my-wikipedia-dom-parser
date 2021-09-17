@@ -46,7 +46,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  *
  * @param {string} url URL (of Wikipedia).
  *
- * @return {Promise<{keyword: string; parentKeyword: string; url: string;}[]>} Promise of fetched Keywords.
+ * @return {Promise<{keyword: string; parentKeyword: string; url: string;}[]>} Promise of newly fetched keyword list.
  */
 const searchOneKeyword = async (url) => {
   await sleep(1000);
@@ -65,49 +65,49 @@ const searchOneKeyword = async (url) => {
     .querySelector("p");
   const anchorList = p.querySelectorAll('[href*="/wiki/"]');
 
-  const fetchedKeywords = [...anchorList].map((a) => ({
+  const keywordList = [...anchorList].map((a) => ({
     keyword: parseKeywordFromURL(a.href),
     parentKeyword: parseKeywordFromURL(url),
     url: host + a.attributes.href.value,
   }));
 
-  return fetchedKeywords;
+  return keywordList;
 };
 
 /**
  * Verify whether the given keyword belongs to no fetching keywords.
  *
- * Keywords that ends with "語" or "学" are no fetching keywords.
- * They do not need to be fetched for keywords inside their introduction section.
+ * Keywords that ends with "語" or "学" are no searching keywords.
+ * They do not need to be searched for keywords inside their introduction section.
  *
  * @param {string} keyword
  *
  * @return {boolean}
  */
-const isNoFetchingKeyword = (keyword) =>
+const isNoSearchingKeyword = (keyword) =>
   keyword[keyword.length - 1] === "語" || keyword[keyword.length - 1] === "学";
 
 /**
- * Verify whether the given keyword has been fetched.
+ * Verify whether the given keyword has been searched.
  *
  * @param {string}   target            Target keyword to verify.
- * @param {string[]} fetchHistoryList  List consists of keyword that has been fetched.
+ * @param {string[]} fetchHistoryList  List consists of keyword that has been searched.
  *
  * @return {boolean}
  */
-const isKeywordFetched = (target, fetchHistoryList) =>
+const isKeywordSearched = (target, fetchHistoryList) =>
   fetchHistoryList.includes(target);
 
 /**
- * Search nested keywords for 20 times.
+ * Nesting search keyword for up to 20 times.
  *
- * Nested search for keywords that appear inside their parent keyword's introduction section for up to 20 times.
+ * Nesting search for keywords that appear inside their parent keyword's introduction section for up to 20 times.
  *
  * @param {string} url URL (of Wikipedia).
  *
- * @return {Promise<{keyword: string; parentKeyword: string | null; url: string;}[]>} Promise of fetched Keywords.
+ * @return {Promise<{keyword: string; parentKeyword: string | null; url: string;}[]>} Promise of result keyword list.
  */
-const searchNestedKeywords = async (url) => {
+const nestingSearchKeywords = async (url) => {
   const keywordList = [];
   keywordList.push({
     keyword: parseKeywordFromURL(url),
@@ -120,9 +120,9 @@ const searchNestedKeywords = async (url) => {
   while (fetchHistoryList.length < 20) {
     if (!keywordList[i]) {
       break;
-    } else if (isNoFetchingKeyword(keywordList[i].keyword)) {
+    } else if (isNoSearchingKeyword(keywordList[i].keyword)) {
       keywordList[i].keyword += "$";
-    } else if (isKeywordFetched(keywordList[i].keyword, fetchHistoryList)) {
+    } else if (isKeywordSearched(keywordList[i].keyword, fetchHistoryList)) {
       keywordList[i].keyword += "@";
     } else {
       const keywords = await searchOneKeyword(keywordList[i].url);
@@ -139,21 +139,34 @@ const searchNestedKeywords = async (url) => {
   return keywordList;
 };
 
-// Sample result Tree
-// const keywordTree = {
-//   keyword: "Foobar",
-//   children: [
-//     {
-//       keyword: "メタ構文変数",
-//       children: [
-//         { keyword: "プログラミング言語", children: [] },
-//         { keyword: "識別子", children: [] },
-//       ],
-//     },
-//   ],
-// };
-
-const transformListToTree = (keywordList) => {
+/**
+ * Transform keyword list to tree.
+ *
+ * This method uses object references in JavaScript to build a tree structure. It takes O(n) time.
+ * @see https://typeofnan.dev/an-easy-way-to-build-a-tree-with-object-references/
+ *
+ * @param {{keyword: string; parentKeyword: string | null; url: string;}[]} keywordList Keyword list from Wikipedia.
+ *
+ * @return result keyword tree.
+ *
+ * Sample result for root keyword "Foobar" would be
+ * {
+ *   keyword: "Foobar",
+ *   parentKeyword: null,
+ *   url: "/wiki/Foobar"
+ *   children: [
+ *   {
+ *     keyword: "メタ構文変数",
+ *     children: [
+ *       { keyword: "プログラミング言語", parentKeyword: "Foobar" ,children: [...] },
+ *       { keyword: "識別子", parentKeyword: "Foobar", children: null },
+ *     ],
+ *     ...
+ *   },
+ *   ]
+ * }
+ */
+const transformKeywordListToTree = (keywordList) => {
   let keywordTree;
   keywordList.forEach((one) => {
     if (!one.parentKeyword) {
@@ -170,6 +183,16 @@ const transformListToTree = (keywordList) => {
   return keywordTree;
 };
 
+/**
+ * Transform keyword tree to HTML list elements.
+ *
+ * This method uses recursion to generate HTML list. It takes O(n) time.
+ *
+ * @param {string} keywordTree Keywords from Wikipedia in form of a tree structure.
+ * @param {string} container Element to which a HTML list attaches, usually a <ul> element.
+ *
+ * @return {void}
+ */
 const transformTreeToHtmlList = (keywordTree, container) => {
   const li = document.createElement("li");
   container.appendChild(li);
@@ -182,14 +205,23 @@ const transformTreeToHtmlList = (keywordTree, container) => {
   });
 };
 
+/**
+ * Clear search result from DOM.
+ */
 const clearSearchResult = () => {
   document.getElementById("result").innerHTML = "";
 };
 
+/**
+ * Show searching-in-progress elements.
+ */
 const showSearchingInProgress = () => {
   document.getElementById("searching-in-progress").classList.remove("hidden");
 };
 
+/**
+ * Hide searching-in-progress elements.
+ */
 const hideSearchingInProgress = () => {
   document.getElementById("searching-in-progress").classList.add("hidden");
 };
@@ -199,8 +231,8 @@ const main = async () => {
     clearSearchResult();
     showSearchingInProgress();
 
-    const keywordList = await searchNestedKeywords(getInputUrl());
-    const keywordTree = transformListToTree(keywordList);
+    const keywordList = await nestingSearchKeywords(getInputUrl());
+    const keywordTree = transformKeywordListToTree(keywordList);
 
     const rootContainer = document.getElementById("result");
     transformTreeToHtmlList(keywordTree, rootContainer);
